@@ -151,13 +151,13 @@ def main():
     for i in range(0,20):
         for j in range(0,20):
             policy[i,j] = policy[i,j] - 5
-    policy_iteration()
-    print("policy_iteration complete")
-    x = np.arange(0,MAX_CARS,1)
-    xx = np.meshgrid(x,x)
+    #policy_iteration()
+    #print("policy_iteration complete")
+    x = np.arange(0,MAX_CARS+1,1)
+    xx,yy = np.meshgrid(x,x)
     fig = plt.figure()
     ax = fig.gca(projection='3d')
-    ax.plot_surface(xx,xx,values)
+    ax.plot_surface(xx,yy,values)
     plt.savefig('values.png')
     ax.plot_surface(xx,xx,policy)
     plt.savefig('policy.png')
