@@ -41,6 +41,7 @@ def calc_reward(location,rented,returned,new_i,new_j):
 
 
 def policy_valuation():
+    print("policy_valuation")
     delta = 0
     iteration = 0
     while True:
@@ -57,6 +58,8 @@ def policy_valuation():
                     continue
                 if curr_cars_j < 0 or curr_cars_j > MAX_CARS:
                     continue
+                #print("i: {}, j: {}, curr_action: {}".format(i,j,curr_action))
+                #print("curr_cars: i {}, j {}".format(curr_cars_i,curr_cars_j))
                 curr_reward = abs(curr_action)*MOVE_COST*-1
                 for x_return in range(curr_cars_i,MAX_CARS+1):
                     for y_return in range(curr_cars_j,MAX_CARS+1):
@@ -64,13 +67,17 @@ def policy_valuation():
                         curr_cars_x = x_return
                         return_y = y_return - curr_cars_j
                         curr_cars_y = y_return
+                        #print("cars returned: i {}, j {}".format(return_x,return_y))
                         for x_rented in range(0,curr_cars_x+1):
                             for y_rented in range(0,curr_cars_y+1):
                                 new_i = curr_cars_i - x_rented
                                 new_j = curr_cars_j - y_rented
+                                #print("cars rented: i {}, j {}".format(x_rented,y_rented))
+                                #print("new state: i {}, j {}".format(new_i,new_j))
                                 reward_x = calc_reward(1,x_rented,return_x,new_i,new_j)
                                 reward_y = calc_reward(2,y_rented,return_y,new_i,new_j)
                                 curr_reward = curr_reward + reward_x + reward_y
+                #print("total reward: {}".format(curr_reward))
                 delta = max(delta,abs(curr_val-curr_reward))
         if delta < ACCEPTABLE_ERROR:
             break
@@ -79,6 +86,7 @@ def policy_valuation():
 
 
 def policy_improvement():
+    print("policy_improvement")
     stable = True
     for i in range(0, MAX_CARS):
         for j in range(0, MAX_CARS):
@@ -86,6 +94,7 @@ def policy_improvement():
             curr_val = values[i,j]
             max_val = curr_val
             max_action = curr_action
+            #print("state: i {}, j {}, action {}".format(i,j,curr_action))
             for action in range(MAX_MOVE*-1,MAX_MOVE+1):
                 if action > 0 and action > j:
                     continue
@@ -95,22 +104,28 @@ def policy_improvement():
                     continue
                 if action < 0 and (action*-1 + j) > 20:
                     continue
-                curr_cars_i = i + action
-                curr_cars_j = j - action
+                curr_cars_i = i + action #=1
+                curr_cars_j = j - action #=0
+                #action = 1
+                #print("action: {}, curr_cars: i {}, j {}".format(action,curr_cars_i,curr_cars_j))
                 curr_reward = abs(action*MOVE_COST)*-1
                 for x_return in range(curr_cars_i,MAX_CARS+1):
                     for y_return in range(curr_cars_j,MAX_CARS+1):
-                        x_return = x_return - curr_cars_i
-                        y_return = y_return - curr_cars_j
-                        curr_cars_i = curr_cars_i + x_return
-                        curr_cars_j = curr_cars_j + y_return
-                        for x_rent in range(0,curr_cars_i+1):
-                            for y_rent in range(0,curr_cars_j+1):
-                                new_i = curr_cars_i - x_rent
-                                new_j = curr_cars_j - y_rent
-                                reward_x = calc_reward(1,x_rent,x_return,new_i,new_j)
-                                reward_y = calc_reward(2,y_rent,y_return,new_i,new_j)
+                        return_x = x_return - curr_cars_i #=-1
+                        return_y = y_return - curr_cars_j #=1
+                        curr_cars_x = curr_cars_i + return_x #=0
+                        curr_cars_y = curr_cars_j + return_y #=1
+                        #print("returned: i {}, j {}, curr_cars: i {}, j {}".format(return_x,return_y,curr_cars_x,curr_cars_y))
+                        for x_rent in range(0,curr_cars_x+1):
+                            for y_rent in range(0,curr_cars_y+1):
+                                new_i = curr_cars_x - x_rent
+                                new_j = curr_cars_y - y_rent
+                                #print("cars_rented: i {}, j {}".format(x_rent,y_rent))
+                                #print("new_state: i {}, j {}".format(new_i,new_j))
+                                reward_x = calc_reward(1,x_rent,return_x,new_i,new_j)
+                                reward_y = calc_reward(2,y_rent,return_y,new_i,new_j)
                                 curr_reward = curr_reward + reward_x + reward_y
+                #print("curr_reward: {}".format(curr_reward))
                 val = curr_reward
                 if val > curr_val:
                     max_action = action
@@ -138,7 +153,7 @@ def main():
             policy[i,j] = policy[i,j] - 5
     policy_iteration()
     print("policy_iteration complete")
-    x = np.arrange(0,MAX_CARS,1)
+    x = np.arange(0,MAX_CARS,1)
     xx = np.meshgrid(x,x)
     fig = plt.figure()
     ax = fig.gca(projection='3d')
