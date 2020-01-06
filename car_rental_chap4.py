@@ -151,8 +151,8 @@ def main():
     for i in range(0,20):
         for j in range(0,20):
             policy[i,j] = policy[i,j] - 5
-    #policy_iteration()
-    #print("policy_iteration complete")
+    policy_iteration()
+    print("policy_iteration complete")
     x = np.arange(0,MAX_CARS+1,1)
     xx,yy = np.meshgrid(x,x)
     fig = plt.figure()
