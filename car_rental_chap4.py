@@ -29,26 +29,28 @@ def calc_poisson(lam,n):
     return val
 
 
-def calc_reward(location,rented,returned,new_i,new_j):
-    reward = rented * RENTAL_EARNING
+#def calc_reward(location,rented,returned,new_i,new_j):
+def calc_reward(x_rented,y_rented,x_returned,y_returned,new_i,new_j):
+    #reward = rented * RENTAL_EARNING
+    reward = (x_rented+y_rented) * RENTAL_EARNING
     reward = reward + DISCOUNT*values[new_i,new_j]
-    if location == 1:
-        prob = calc_poisson(LAMBDA_1_RENT,rented) * calc_poisson(LAMBDA_1_RETURN,returned)
-    else:
-        prob = calc_poisson(LAMBDA_2_RENT,rented) * calc_poisson(LAMBDA_2_RETURN,returned)
-    reward = reward * prob
+    #if location == 1:
+    prob_1 = calc_poisson(LAMBDA_1_RENT,x_rented) * calc_poisson(LAMBDA_1_RETURN,x_returned)
+    #else:
+    prob_2 = calc_poisson(LAMBDA_2_RENT,y_rented) * calc_poisson(LAMBDA_2_RETURN,y_returned)
+    reward = reward * prob_1 * prob_2
     return reward
 
 
 def policy_valuation():
     print("policy_valuation")
-    delta = 0
     iteration = 0
     while True:
+        delta = 0
         iteration = iteration + 1
         print("value_iteration: {}".format(iteration))
-        for i in range(0,MAX_CARS):
-            for j in range(0,MAX_CARS):
+        for i in range(0,MAX_CARS+1):
+            for j in range(0,MAX_CARS+1):
                 #state (i,j)
                 curr_val = values[i,j]
                 curr_action = policy[i,j]
@@ -61,12 +63,12 @@ def policy_valuation():
                 #print("i: {}, j: {}, curr_action: {}".format(i,j,curr_action))
                 #print("curr_cars: i {}, j {}".format(curr_cars_i,curr_cars_j))
                 curr_reward = abs(curr_action)*MOVE_COST*-1
-                for x_return in range(curr_cars_i,MAX_CARS+1):
-                    for y_return in range(curr_cars_j,MAX_CARS+1):
-                        return_x = x_return - curr_cars_i
-                        curr_cars_x = x_return
-                        return_y = y_return - curr_cars_j
-                        curr_cars_y = y_return
+                for x_possible in range(curr_cars_i,MAX_CARS+1):
+                    for y_possible in range(curr_cars_j,MAX_CARS+1):
+                        return_x = x_possible - curr_cars_i
+                        curr_cars_x = x_possible
+                        return_y = y_possible - curr_cars_j
+                        curr_cars_y = y_possible
                         #print("cars returned: i {}, j {}".format(return_x,return_y))
                         for x_rented in range(0,curr_cars_x+1):
                             for y_rented in range(0,curr_cars_y+1):
@@ -74,22 +76,29 @@ def policy_valuation():
                                 new_j = curr_cars_j - y_rented
                                 #print("cars rented: i {}, j {}".format(x_rented,y_rented))
                                 #print("new state: i {}, j {}".format(new_i,new_j))
-                                reward_x = calc_reward(1,x_rented,return_x,new_i,new_j)
-                                reward_y = calc_reward(2,y_rented,return_y,new_i,new_j)
-                                curr_reward = curr_reward + reward_x + reward_y
+                                #reward_x = calc_reward(1,x_rented,return_x,new_i,new_j)
+                                #reward_y = calc_reward(2,y_rented,return_y,new_i,new_j)
+                                reward_x_y = calc_reward(x_rented,y_rented,return_x,return_y,new_i,new_j)
+                                curr_reward = curr_reward + reward_x_y
+                                #curr_reward = curr_reward + reward_x + reward_y
+                                #print("state: i {}, j {}; action: {}, return: i {}, j {}; rent: i {}, j {}; reward: i {}, j {}, curr {}".format(i,j,curr_action,return_x,return_y,x_rented,y_rented,reward_x,reward_y,curr_reward))
+                                #print("curr_reward: {}".format(curr_reward))
+                values[i,j] = curr_reward
                 #print("total reward: {}".format(curr_reward))
+                #print("state: i {}, j {}, err {}".format(i,j,abs(curr_val-curr_reward)))
                 delta = max(delta,abs(curr_val-curr_reward))
+        print("delta: {}".format(delta))
         if delta < ACCEPTABLE_ERROR:
             break
-        if iteration > 9:
-            break
+                #if iteration > 9:
+        #    #break
 
 
 def policy_improvement():
     print("policy_improvement")
     stable = True
-    for i in range(0, MAX_CARS):
-        for j in range(0, MAX_CARS):
+    for i in range(0, MAX_CARS+1):
+        for j in range(0, MAX_CARS+1):
             curr_action = policy[i,j]
             curr_val = values[i,j]
             max_val = curr_val
@@ -122,9 +131,11 @@ def policy_improvement():
                                 new_j = curr_cars_y - y_rent
                                 #print("cars_rented: i {}, j {}".format(x_rent,y_rent))
                                 #print("new_state: i {}, j {}".format(new_i,new_j))
-                                reward_x = calc_reward(1,x_rent,return_x,new_i,new_j)
-                                reward_y = calc_reward(2,y_rent,return_y,new_i,new_j)
-                                curr_reward = curr_reward + reward_x + reward_y
+                                #reward_x = calc_reward(1,x_rent,return_x,new_i,new_j)
+                                #reward_y = calc_reward(2,y_rent,return_y,new_i,new_j)
+                                #curr_reward = curr_reward + reward_x + reward_y
+                                reward_x_y = calc_reward(x_rent,y_rent,return_x,return_y,new_i,new_j)
+                                curr_reward = curr_reward + reward_x_y
                 #print("curr_reward: {}".format(curr_reward))
                 val = curr_reward
                 if val > curr_val:
