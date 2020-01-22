@@ -7,25 +7,33 @@ HIT = 1
 STAY = 0
 MC_ES_ITERATIONS = 10000
 MC_OP_ITERATIONS = 10000
-policy
-q_value
-s_a_encounters
-s_a_episode
-s_episode
+policy = None
+q_value = None
+value = None
+s_a_encounters = None
+s_a_episode = None
+s_episode = None
 
 def initialize_values():
+    global policy
     policy = np.full((200,1),HIT,dtype=int)
     for i in range(10):
         for j in range(2):
             temp = j*100 + i
             policy[temp+10*8] = STAY
             policy[temp+10*9] = STAY
+    global q_value
     q_value = np.zeros((200,2))
+    global value
+    value = np.zeros((200,1))
+    global s_a_encounters
     s_a_encounters = np.zeros((200,1))
 
 
 def initialize_episode():
+    global s_a_episode
     s_a_episode = np.zeros((200,2))
+    global s_episode
     s_episode = np.zeros((200,1))
 
 
@@ -119,16 +127,54 @@ def print_result():
         z = policy[i]
         if z == 0:
             m = 'o'
+            color = 'red'
         else:
             m = '^'
-        ax.scatter(x,y,z,marker=m)
+            color = 'blue'
+        ax.scatter(x,y,z,marker=m,color=color)
     ax.set_xlabel('X Label')
     ax.set_ylabel('Y Label')
     ax.set_zlabel('Z Label')
-    plt.show()
+    plt.savefig('policy_usable_ace.png')
     #policy: player sum vs dealer card vs policy for non usable ace
+    ax = fig.add_subplot(111, projection='3d')
+    for i in range(100):
+        x = (i/10)%10 + 12 #player_sum
+        y = i%10 + 1 #dealer_card
+        z = policy[i]
+        if z == 0:
+            m = 'o'
+            color = 'red'
+        else:
+            m = '^'
+            color = 'blue'
+        ax.scatter(x,y,z,marker=m,color=color)
+    ax.set_xlabel('X Label')
+    ax.set_ylabel('Y Label')
+    ax.set_zlabel('Z Label')
+    plt.savefig('policy_non_usable_ace.png')
     #value: player sum vs dealer card vs value for usable ace
+    ax = fig.add_subplot(111, projection='3d')
+    for i in range(100,200):
+        x = (i/10)%10 + 12 #player_sum
+        y = i%10 + 1 #dealer_card
+        z = value[i]
+        ax.scatter(x,y,z,marker=m,color=color)
+    ax.set_xlabel('X Label')
+    ax.set_ylabel('Y Label')
+    ax.set_zlabel('Z Label')
+    plt.savefig('value_usable_ace.png')
     #value: player sum vs dealer card vs value for non usable ace
+    ax = fig.add_subplot(111, projection='3d')
+    x = np.arange(12,22,1)
+    y = np.arange(1,11,1)
+    xx,yy = np.meshgrid(x,y)
+    zz = np.zeros((10,10))
+    for i in range(10):
+        for j in range(10):
+            zz[i,j] = values[i*10+j]
+    ax.plot_wireframe(xx, yy, zz, rstride=10, cstride=10)
+    plt.savefig('value_non_usable_ace.png')
 
 
 def main():
