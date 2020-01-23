@@ -2,11 +2,12 @@ from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
 import matplotlib.pyplot as plt
 import numpy as np
 from random import randrange
+import random
 
 HIT = 1
 STAY = 0
-MC_ES_ITERATIONS = 10#000
-MC_OP_ITERATIONS = 10#000
+MC_ES_ITERATIONS = 50000
+MC_OP_ITERATIONS = 50000
 EPSILON = 0.2
 policy_es = None
 policy_op = None
@@ -27,7 +28,7 @@ def initialize_values():
             policy_es[temp+10*8] = STAY
             policy_es[temp+10*9] = STAY
     global policy_op
-    policy_op = np.zeros((200,0))
+    policy_op = np.zeros((200,2))
     global q_value
     q_value = np.zeros((200,2))
     global value
@@ -35,7 +36,7 @@ def initialize_values():
     global s_a_encounters
     s_a_encounters = np.zeros((200,2))
     global s_encounters
-    e_encounters = np.zeros((200,1))
+    s_encounters = np.zeros((200,1))
 
 
 def initialize_episode():
@@ -46,6 +47,9 @@ def initialize_episode():
 
 
 def player_play_es(player_sum,player_action,dealer_card,usable_ace):
+    global policy_es
+    global s_episode
+    global s_a_episode
     if player_sum > 21:
         return player_sum
     if player_action == STAY:
@@ -56,10 +60,13 @@ def player_play_es(player_sum,player_action,dealer_card,usable_ace):
         next_action = policy_es[next_state]
         s_episode[next_state] = s_episode[next_state] + 1
         s_a_episode[next_state,next_action] = s_a_episode[next_state,next_action] + 1
-        player_play(next_sum,next_action,dealer_card,usable_ace)
+        player_play_es(next_sum,next_action,dealer_card,usable_ace)
 
 
 def player_play_op(player_sum,player_action,dealer_card,usable_ace):
+    global policy_op
+    global s_episode
+    global s_a_episode
     if player_sum > 21:
         return player_sum
     if player_action == STAY:
@@ -77,7 +84,7 @@ def player_play_op(player_sum,player_action,dealer_card,usable_ace):
             next_action = 1 - max_action
         s_episode[next_state] = s_episode[next_state] + 1
         s_a_episode[next_state,next_action] = s_a_episode[next_state,next_action] + 1
-        player_play(next_sum,next_action,dealer_card,usable_ace)
+        player_play_op(next_sum,next_action,dealer_card,usable_ace)
 
 
 def dealer_play(dealer_card):
@@ -88,6 +95,11 @@ def dealer_play(dealer_card):
 
 
 def update_q_value_es(return_episode):
+    global s_a_episode
+    global value
+    global q_value
+    global s_a_encounters
+    global s_encounters
     for i in range(200):
         for j in range(2):
             if s_a_episode[i,j] != 0:
@@ -98,6 +110,8 @@ def update_q_value_es(return_episode):
  
 
 def update_policy_es():
+    global q_value
+    global policy_es
     for i in range(200):
         if s_episode[i] != 0:
             if q_value[i,0] > q_value[i,1]:
@@ -108,6 +122,9 @@ def update_policy_es():
 
 
 def update_q_value_op(return_episode):
+    global q_value
+    global s_a_encounters
+    global s_encounters
     for i in range(200):
         for j in range(2):
             if s_a_episode[i,j] != 0:
@@ -118,6 +135,9 @@ def update_q_value_op(return_episode):
  
 
 def update_policy_op():
+    global s_episode
+    global q_value
+    global policy_op
     for i in range(200):
         if s_episode[i] != 0:
             if q_value[i,0] > q_value[i,1]:
@@ -129,7 +149,9 @@ def update_policy_op():
             policy_op[i,opposite_action] = EPSILON/2
 
 
-def monte_carlo_es(itertions):
+def monte_carlo_es(iterations):
+    global s_episode
+    global s_a_episode
     initialize_values()
     i = 0
     while i < iterations:
@@ -177,6 +199,9 @@ def monte_carlo_es(itertions):
 
 
 def monte_carlo_op(iterations):
+    global policy_op
+    global s_episode
+    global s_a_episode
     initialize_values()
     i = 0
     while i < iterations:
@@ -231,6 +256,8 @@ def monte_carlo_op(iterations):
 
 
 def print_result_es():
+    global policy_es
+    global value
     #policy: player sum vs dealer card vs policy for usable ace
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
@@ -291,6 +318,8 @@ def print_result_es():
 
 
 def print_result_op():
+    global policy_op
+    global value
     #policy: player sum vs dealer card vs policy for usable ace
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
@@ -298,9 +327,9 @@ def print_result_op():
         x = (i/10)%10 + 12 #player_sum
         y = i%10 + 1 #dealer_card
         if policy_op[i,0] > policy_op[i,1]:
-            z = policy[i,0]
+            z = policy_op[i,0]
         else:
-            z = policy[i,1]
+            z = policy_op[i,1]
         if z == 0:
             m = 'o'
             color = 'red'
@@ -318,9 +347,9 @@ def print_result_op():
         x = (i/10)%10 + 12 #player_sum
         y = i%10 + 1 #dealer_card
         if policy_op[i,0] > policy_op[i,1]:
-            z = policy[i,0]
+            z = policy_op[i,0]
         else:
-            z = policy[i,1]
+            z = policy_op[i,1]
         if z == 0:
             m = 'o'
             color = 'red'
@@ -359,7 +388,7 @@ def print_result_op():
 def main():
     monte_carlo_es(MC_ES_ITERATIONS)
     print_result_es()
-    monte_carlo_on_policy(MC_OP_ITERATIONS)
+    monte_carlo_op(MC_OP_ITERATIONS)
     print_result_op()
 
 
